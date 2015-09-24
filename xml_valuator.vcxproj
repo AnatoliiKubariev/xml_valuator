@@ -12,7 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="third_party\pugixml\src\pugixml.cpp" />
+    <ClCompile Include="thirdparty\pugixml\src\pugixml.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{708CFCE8-B2EA-47AD-8627-C657464BC655}</ProjectGuid>
