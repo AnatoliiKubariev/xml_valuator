@@ -1,74 +1,72 @@
 #include <iostream>
 #include <string>
+#include <iomanip>
 
 #include "thirdparty\pugixml\src\pugixml.hpp"
 
-double calculate(const pugi::xml_node node);
+double calculate(const pugi::xml_node& node);
+double get_component(const pugi::xml_node& node, const bool is_complex);
 
-double addition(const pugi::xml_node node)
+double addition(const pugi::xml_node& node)
 {
 	if (std::string(node.name()) != "addition")
 		return 0x5D0;
 
 	double result = 0;
-
+	const bool is_complex = node.attribute("complex").as_bool();
 	for (pugi::xml_node temp_node = node.child("item"); temp_node; temp_node = temp_node.next_sibling("item"))
 	{
-		if (temp_node.first_child().first_child())
-			result += calculate(temp_node.first_child());
-		else
-		result += temp_node.text().as_double();
+		result += get_component(temp_node, is_complex);
 	}
 	return result;
 }
 
-double subtraction(const pugi::xml_node node)
+double subtraction(const pugi::xml_node& node)
 {
 	if (std::string(node.name()) != "subtraction")
 		return 0x5D0;
 
-	double result = node.child("minuend").text().as_double();
-	result -= node.child("subtrahend").text().as_double();
-	return result;
+	const bool is_complex = node.attribute("complex").as_bool();
+	const double complex = get_component(node.child("minuend"), is_complex);
+	const double subtrahend = get_component(node.child("subtrahend"), is_complex);
+	return complex - subtrahend;
 }
 
-double multiplication(const pugi::xml_node node)
+double multiplication(const pugi::xml_node& node)
 {
 	if (std::string(node.name()) != "multiplication")
 		return 0x5D0;
 
 	double result = 1;
-
+	const bool is_complex = node.attribute("complex").as_bool();
 	for (pugi::xml_node temp_node = node.child("factor"); temp_node; temp_node = temp_node.next_sibling("factor"))
 	{
-		if (temp_node.first_child().first_child())
-			result *= calculate(temp_node.first_child());
-		else
-		result *= temp_node.text().as_double();
+		result *= get_component(temp_node, is_complex);
 	}
 	return result;
 }
 
-double division(const pugi::xml_node node)
+double division(const pugi::xml_node& node)
 {
 	if (std::string(node.name()) != "division")
 		return 0x5D0;
 
-	double result = 0;
-	if (node.child("dividend").first_child().first_child())
-		result = calculate(node.child("dividend").first_child());
-	else
-	result = node.child("dividend").text().as_double();
-
-	if (node.child("divisor").first_child().first_child())
-		result /= calculate(node.child("divisor").first_child());
-	else
-	result /= node.child("divisor").text().as_double();
-
-	return result;
+	const bool is_complex = node.attribute("complex").as_bool();
+	const double dividend = get_component(node.child("dividend"), is_complex);
+	const double divisor = get_component(node.child("divisor"), is_complex);
+	return dividend / divisor;
 }
 
-double calculate(const pugi::xml_node node)
+
+double get_component(const pugi::xml_node& node, const bool is_complex)
+{
+	if (is_complex && node.first_child().first_child())
+		return calculate(node.first_child());
+	else
+		return node.text().as_double();
+}
+
+double calculate(const pugi::xml_node& node)
 {
 	if (std::string(node.name()) == "addition")
 		return addition(node);
@@ -87,11 +85,37 @@ int main()
 	if (!doc.load_file("data0002.xml"))
 		return -1;
 
+	std::cout << std::boolalpha;
 	for (pugi::xml_node node = doc.child("expressions").first_child(); node; node = node.next_sibling())
 	{
-		std::cout << node.name() << "\n";
-		std::cout << calculate(node) << "\n";
+		//Test
+		switch (node.attribute("id").as_int())
+		{
+		case 10:
+			std::cout << node.name() << "\n";
+			std::cout << (calculate(node) == 9) << "\n";
+			break;
+		case 11:
+			std::cout << node.name() << "\n";
+			std::cout << (calculate(node) == 1) << "\n";
+			break;
+		case 12:
+			std::cout << node.name() << "\n";
+			std::cout << (calculate(node) == 240) << "\n";
+			break;
+		case 13:
+			std::cout << node.name() << "\n";
+			std::cout << (calculate(node) == 1814400) << "\n";
+			break;
+		case 14:
+			std::cout << node.name() << "\n";
+			std::cout << (calculate(node) == 6) << "\n";
+			break;
+		default:
+			return -1;
+		}
 	}
-		std::cin.get();
-		return 0;
-	}
+
+	std::cin.get();
+	return 0;
+}
