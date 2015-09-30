@@ -1,209 +1,171 @@
 #include <iostream>
 #include <string>
-#include <iomanip>
-#include <algorithm>
 #include <fstream>
+#include <vector>
+#include <sstream>
+#include <expat.h>
+#include "xml_state.h"
 
-#include "thirdparty\pugixml\src\pugixml.hpp"
+void calculate(xml_state* state, const std::string& name);
 
-double calculate(const pugi::xml_node& node);
-double get_component(const pugi::xml_node& node, const bool is_complex);
-
-double addition(const pugi::xml_node& node)
+void start(void* userData, const char* name, const char* args[])
 {
-	if (std::string(node.name()) != "addition")
-		return 0x5D0;
-
-	double result = 0;
-	const bool is_complex = node.attribute("complex").as_bool();
-	for (pugi::xml_node temp_node = node.child("item"); temp_node; temp_node = temp_node.next_sibling("item"))
+	xml_state* state = reinterpret_cast<xml_state*>(userData);
+	std::string node_name(name);
+	if (node_name == "expressions" && state->nodes.empty())
 	{
-		result += get_component(temp_node, is_complex);
+		state->nodes.push(node(std::string(name)));
+		return;
 	}
-	return result;
-}
 
-double subtraction(const pugi::xml_node& node)
-{
-	if (std::string(node.name()) != "subtraction")
-		return 0x5D0;
-
-	const bool is_complex = node.attribute("complex").as_bool();
-	const double complex = get_component(node.child("minuend"), is_complex);
-	const double subtrahend = get_component(node.child("subtrahend"), is_complex);
-	return complex - subtrahend;
-}
-
-double multiplication(const pugi::xml_node& node)
-{
-	if (std::string(node.name()) != "multiplication")
-		return 0x5D0;
-
-	double result = 1;
-	const bool is_complex = node.attribute("complex").as_bool();
-	for (pugi::xml_node temp_node = node.child("factor"); temp_node; temp_node = temp_node.next_sibling("factor"))
+	node& top_node = state->nodes.top();
+	if (top_node.name == "addition")
 	{
-		result *= get_component(temp_node, is_complex);
+		if (node_name != "item")
+			return;
 	}
-	return result;
-}
-
-double division(const pugi::xml_node& node)
-{
-	if (std::string(node.name()) != "division")
-		return 0x5D0;
-
-	const bool is_complex = node.attribute("complex").as_bool();
-	const double dividend = get_component(node.child("dividend"), is_complex);
-	const double divisor = get_component(node.child("divisor"), is_complex);
-	return dividend / divisor;
-}
-
-
-double get_component(const pugi::xml_node& node, const bool is_complex)
-{
-	if (is_complex && node.first_child().first_child())
-		return calculate(node.first_child());
 	else
-		return node.text().as_double();
-}
-
-double calculate(const pugi::xml_node& node)
-{
-	if (std::string(node.name()) == "addition")
-		return addition(node);
-	if (std::string(node.name()) == "subtraction")
-		return subtraction(node);
-	if (std::string(node.name()) == "multiplication")
-		return multiplication(node);
-	if (std::string(node.name()) == "division")
-		return division(node);
-}
-
-void add_addition(std::ostream& os, int id);
-void add_subtraction(std::ostream& os, int id);
-void add_multiplication(std::ostream& os, int id);
-void add_division(std::ostream& os, int id);
-
-void generate_xml(std::ostream& os)
-{
-	os << "<expressions>" << std::endl;
-	//for (int id = 1; id <= 4; ++id)
-	int id = 1;
-	while (os.tellp() < 1024 * 1024 * 1024)
+	if (top_node.name == "subtraction")
 	{
-		int xml_case = rand() % 4 + 1;
-		switch (xml_case)
-		{
-		case 1:
-			add_addition(os, id);
-			break;
-		case 2:
-			add_subtraction(os, id);
-			break;
-		case 3:
-			add_multiplication(os, id);
-			break;
-		case 4:
-			add_division(os, id);
-			break;
-		default:
-			break;
-		}
-		++id;
+		if (node_name != "minuend" && node_name != "subtrahend")
+			return;
+	}
+	else
+	if (top_node.name == "multiplication")
+	{
+		if (node_name != "factor")
+			return;
+	}
+	else
+	if (top_node.name == "division")
+	{
+		if (node_name != "dividend" && node_name != "divisor")
+			return;
 	}
 
+	if (std::string(name) == "addition")
+		state->result = 0;
+	if (std::string(name) == "multiplication")
+		state->result = 1;
 
-	os << "</expressions>";
+	state->nodes.push(node(std::string(name)));
 }
 
-void add_addition(std::ostream& os, int id)
+void value(void* userData, const char* val, int len)
 {
-	os << "<addition id=\"" << id << "\">" << std::endl;
+	xml_state* state = reinterpret_cast<xml_state*>(userData);
+	node& top_node = state->nodes.top();
 
-	for (int i = 0; i < rand() % 5 + 2; ++i)
+	std::istringstream stream(std::string(val, len));
+	double value = 0;
+	stream >> value;
+	if (stream)
 	{
-		os << "<item>";
-		int item = rand() % 100 + 1;
-		os << item;
-		os << "</item>" << std::endl;
+		top_node.value = value;
+		calculate(state, top_node.name);
 	}
 
-	os << "</addition>" << std::endl;
 }
 
-void add_subtraction(std::ostream& os, int id)
+void end(void *userData, const char *name)
 {
-	os << "<subtraction id=\"" << id << "\">" << std::endl;
+	xml_state* state = reinterpret_cast<xml_state*>(userData);
+	node& top_node = state->nodes.top();
+	std::string node_name(name);
 
-	os << "<minuend>";
-	int minuend = rand() % 100 + 1;
-	os << minuend;
-	os << "</minuend>" << std::endl;
-
-	os << "<subtrahend>";
-	int subtrahend = rand() % 100 + 1;
-	os << subtrahend;
-	os << "</subtrahend>" << std::endl;
-
-	os << "</subtraction>" << std::endl;
-}
-
-void add_multiplication(std::ostream& os, int id)
-{
-	os << "<multiplication  id=\"" << id << "\">" << std::endl;
-
-	for (int i = 0; i < rand() % 5 + 2; ++i)
+	if (node_name == "addition")
 	{
-		os << "<factor>";
-		int factor = rand() % 100 + 1;
-		os << factor;
-		os << "</factor>" << std::endl;
+		std::cout << top_node.name << ": " << state->result << std::endl;
+		state->nodes.pop();
 	}
-
-	os << "</multiplication>" << std::endl;
+	else
+	if (node_name == "subtraction")
+	{
+		std::cout << top_node.name << ": " << state->result << std::endl;
+		state->nodes.pop();
+	}
+	else
+	if (node_name == "multiplication")
+	{
+		std::cout << top_node.name << ": " << state->result << std::endl;
+		state->nodes.pop();
+	}
+	else
+	if (node_name == "division")
+	{
+		std::cout << top_node.name << ": " << state->result << std::endl;
+		state->nodes.pop();
+	}
 }
 
-void add_division(std::ostream& os, int id)
+void calculate(xml_state* state, const std::string& name)
 {
-	os << "<division  id=\"" << id << "\">" << std::endl;
-
-	os << "<dividend>";
-	int dividend = rand() % 100 + 1;
-	os << dividend;
-	os << "</dividend>" << std::endl;
-
-	os << "<divisor>";
-	int divisor = rand() % 100 + 1;
-	os << divisor;
-	os << "</divisor>" << std::endl;
-
-	os << "</division>" << std::endl;
+	node& node = state->nodes.top();
+	if (name == "item")
+	{
+		state->result += node.value;
+	}
+	else
+	if (name == "minuend")
+	{
+		state->result = node.value;
+	}
+	else
+	if (name == "subtrahend")
+	{
+		state->result -= node.value;
+	}
+	else
+	if (name == "factor")
+	{
+		state->result *= node.value;
+	}
+	else
+	if (name == "dividend")
+	{
+		state->result = node.value;
+	}
+	else
+	if (name == "divisor")
+	{
+		state->result /= node.value;
+	}
+	else
+	{
+		state->nodes.pop();
+		return;
+	}
 }
-
 
 int main()
 {
-	//pugi::xml_document doc;
-	//if (!doc.load_file("data0002.xml"))
-	//	return -1;
+	XML_Parser parser = XML_ParserCreate(nullptr);
+	xml_state state;
+	XML_SetElementHandler(parser, start, end);
 
+	XML_SetCharacterDataHandler(parser, value);
+
+	XML_SetUserData(parser, &state);
+
+
+	std::vector<char> part(1024);
+	std::ifstream file("data0001.xml");
+	while (file)
 	{
-		std::ofstream file("file.xml");
-		generate_xml(file);
+		file.read(&part[0], part.size());
+		if (XML_Parse(parser, &part[0], file.gcount(), file.gcount() < part.size()) == 0)
+		{
+			const int code = XML_GetErrorCode(parser);
+			const std::string msg(XML_ErrorString((XML_Error)code));
+			std::cout << "Parsing error code" << code << " " << msg << std::endl;
+			break;
+		}
 	}
 
-	pugi::xml_document doc;
-	if (!doc.load_file("file.xml"))
-		return -1;
+	XML_ParserFree(parser);
 
-	std::cout << std::boolalpha;
-	for (pugi::xml_node node = doc.child("expressions").first_child(); node; node = node.next_sibling())
-	{
-		std::cout << node.name() << std::endl;
-		std::cout << calculate(node) << std::endl;
-	}
-
+	std::cout << state.result;
+	std::cout << file.tellg();
 	std::cin.get();
 	return 0;
 }
