@@ -8,6 +8,7 @@
     <ClCompile Include="generate_xml.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="xml_valuator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -16,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xml_state.h" />
+    <ClInclude Include="xml_valuator.h" />
   </ItemGroup>
 </Project>

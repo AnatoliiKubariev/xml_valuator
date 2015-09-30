@@ -22,9 +22,11 @@
     <ClCompile Include="generate_xml.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="xml_state.cpp" />
+    <ClCompile Include="xml_valuator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xml_state.h" />
+    <ClInclude Include="xml_valuator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{708CFCE8-B2EA-47AD-8627-C657464BC655}</ProjectGuid>
