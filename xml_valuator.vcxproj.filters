@@ -4,11 +4,11 @@
     <ClCompile Include="main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="xml_state.cpp" />
     <ClCompile Include="generate_xml.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="xml_valuator.cpp" />
+    <ClCompile Include="handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -16,7 +16,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="xml_state.h" />
     <ClInclude Include="xml_valuator.h" />
+    <ClInclude Include="handler.h" />
   </ItemGroup>
 </Project>

@@ -20,12 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="generate_xml.cpp" />
+    <ClCompile Include="handler.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="xml_state.cpp" />
     <ClCompile Include="xml_valuator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="xml_state.h" />
+    <ClInclude Include="handler.h" />
     <ClInclude Include="xml_valuator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

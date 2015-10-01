@@ -13,6 +13,13 @@ xml_valuator::xml_valuator(std::ostream& os) : os(os)
 	XML_SetCharacterDataHandler(parser, value);
 	XML_SetUserData(parser, this);
 
+	std::unique_ptr<handler_t> addition(new addition_handler_t());
+	handlers.push_back(std::move(addition));
+}
+
+xml_valuator::~xml_valuator()
+{
+	XML_ParserFree(parser);
 }
 
 void xml_valuator::calculate(const std::string& fname)
@@ -36,57 +43,34 @@ void xml_valuator::start(void* userData, const char* name, const char* args[])
 {
 	xml_valuator* valuator = reinterpret_cast<xml_valuator*>(userData);
 	std::string node_name(name);
-	if (node_name == "expressions" && valuator->state.nodes.empty())
+
+	if (node_name == "expressions" && valuator->nodes.empty())
 	{
-		valuator->state.nodes.push(node(std::string(name)));
+		valuator->nodes.push(node_name);
 		return;
 	}
 
-	node& top_node = valuator->state.nodes.top();
-	if (top_node.name == "addition")
+	for (auto& h : valuator->handlers)
 	{
-		if (node_name != "item")
-			return;
-	}
-	else
-	if (top_node.name == "subtraction")
-	{
-		if (node_name != "minuend" && node_name != "subtrahend")
-			return;
-	}
-	else
-	if (top_node.name == "multiplication")
-	{
-		if (node_name != "factor")
-			return;
-	}
-	else
-	if (top_node.name == "division")
-	{
-		if (node_name != "dividend" && node_name != "divisor")
-			return;
+		h->start(node_name, valuator->nodes);
 	}
 
-	if (std::string(name) == "addition")
-		valuator->state.result = 0;
-	if (std::string(name) == "multiplication")
-		valuator->state.result = 1;
-
-	valuator->state.nodes.push(node(std::string(name)));
+	valuator->nodes.push(node_name);
 }
 
 void xml_valuator::value(void* userData, const char* val, int len)
 {
 	xml_valuator* valuator = reinterpret_cast<xml_valuator*>(userData);
-	node& top_node = valuator->state.nodes.top();
 
 	std::istringstream stream(std::string(val, len));
 	double value = 0;
 	stream >> value;
 	if (stream)
 	{
-		top_node.value = value;
-		calculate(&valuator->state, top_node.name);
+		for (auto& h : valuator->handlers)
+		{
+			h->value(valuator->nodes, value);
+		}
 	}
 
 }
@@ -94,69 +78,11 @@ void xml_valuator::value(void* userData, const char* val, int len)
 void xml_valuator::end(void *userData, const char *name)
 {
 	xml_valuator* valuator = reinterpret_cast<xml_valuator*>(userData);
-	node& top_node = valuator->state.nodes.top();
-	std::string node_name(name);
 
-	if (node_name == "addition")
+	for (auto& h : valuator->handlers)
 	{
-		valuator->os << top_node.name << ": " << valuator->state.result << std::endl;
-		valuator->state.nodes.pop();
+		h->end(std::string(name), valuator->os);
 	}
-	else
-	if (node_name == "subtraction")
-	{
-		valuator->os << top_node.name << ": " << valuator->state.result << std::endl;
-		valuator->state.nodes.pop();
-	}
-	else
-	if (node_name == "multiplication")
-	{
-		valuator->os << top_node.name << ": " << valuator->state.result << std::endl;
-		valuator->state.nodes.pop();
-	}
-	else
-	if (node_name == "division")
-	{
-		valuator->os << top_node.name << ": " << valuator->state.result << std::endl;
-		valuator->state.nodes.pop();
-	}
-}
 
-void xml_valuator::calculate(xml_state* state, const std::string& name)
-{
-	node& node = state->nodes.top();
-	if (name == "item")
-	{
-		state->result += node.value;
-	}
-	else
-	if (name == "minuend")
-	{
-		state->result = node.value;
-	}
-	else
-	if (name == "subtrahend")
-	{
-		state->result -= node.value;
-	}
-	else
-	if (name == "factor")
-	{
-		state->result *= node.value;
-	}
-	else
-	if (name == "dividend")
-	{
-		state->result = node.value;
-	}
-	else
-	if (name == "divisor")
-	{
-		state->result /= node.value;
-	}
-	else
-	{
-		state->nodes.pop();
-		return;
-	}
+	valuator->nodes.pop();
 }
