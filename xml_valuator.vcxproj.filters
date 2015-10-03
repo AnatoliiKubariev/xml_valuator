@@ -8,6 +8,7 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="xml_valuator.cpp" />
+    <ClCompile Include="sax_parser.cpp" />
     <ClCompile Include="handler.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -17,6 +18,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xml_valuator.h" />
+    <ClInclude Include="sax_parser.h" />
     <ClInclude Include="handler.h" />
   </ItemGroup>
 </Project>

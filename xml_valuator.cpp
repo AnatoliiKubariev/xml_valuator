@@ -4,85 +4,38 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <stdexcept>
 
-xml_valuator::xml_valuator(std::ostream& os) : os(os)
+xml_valuator_t::xml_valuator_t(std::ostream& os) : os(os)
 {
-	parser = XML_ParserCreate(nullptr);
-
-	XML_SetElementHandler(parser, start, end);
-	XML_SetCharacterDataHandler(parser, value);
-	XML_SetUserData(parser, this);
-
 	std::unique_ptr<handler_t> addition(new addition_handler_t());
 	handlers.push_back(std::move(addition));
 }
 
-xml_valuator::~xml_valuator()
+void xml_valuator_t::open_tag(const std::string& name)
 {
-	XML_ParserFree(parser);
-}
-
-void xml_valuator::calculate(const std::string& fname)
-{
-	std::vector<char> part(1024);
-	std::ifstream file(fname);
-	while (file)
+	for (auto& h : handlers)
 	{
-		file.read(&part[0], part.size());
-		if (XML_Parse(parser, &part[0], file.gcount(), file.gcount() < part.size()) == 0)
-		{
-			const int code = XML_GetErrorCode(parser);
-			const std::string msg(XML_ErrorString((XML_Error)code));
-			os << "Parsing error code" << code << " " << msg << std::endl;
-			break;
-		}
+		h->start(name, nodes.empty() ? "" : nodes.top());
 	}
 }
-
-void xml_valuator::start(void* userData, const char* name, const char* args[])
+void xml_valuator_t::value(const std::string& value)
 {
-	xml_valuator* valuator = reinterpret_cast<xml_valuator*>(userData);
-	std::string node_name(name);
-
-	if (node_name == "expressions" && valuator->nodes.empty())
-	{
-		valuator->nodes.push(node_name);
+	std::istringstream stream(value);
+	double val = 0;
+	stream >> val;
+	if (!stream)
 		return;
-	}
 
-	for (auto& h : valuator->handlers)
+	for (auto& h : handlers)
 	{
-		h->start(node_name, valuator->nodes);
+		h->value(nodes.top(), val);
 	}
-
-	valuator->nodes.push(node_name);
 }
-
-void xml_valuator::value(void* userData, const char* val, int len)
+void xml_valuator_t::close_tag(const std::string& name)
 {
-	xml_valuator* valuator = reinterpret_cast<xml_valuator*>(userData);
-
-	std::istringstream stream(std::string(val, len));
-	double value = 0;
-	stream >> value;
-	if (stream)
+	for (auto& h : handlers)
 	{
-		for (auto& h : valuator->handlers)
-		{
-			h->value(valuator->nodes, value);
-		}
+		h->end(name, os);
 	}
-
-}
-
-void xml_valuator::end(void *userData, const char *name)
-{
-	xml_valuator* valuator = reinterpret_cast<xml_valuator*>(userData);
-
-	for (auto& h : valuator->handlers)
-	{
-		h->end(std::string(name), valuator->os);
-	}
-
-	valuator->nodes.pop();
 }

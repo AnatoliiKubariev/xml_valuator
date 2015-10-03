@@ -1,28 +1,22 @@
 #pragma once
 
+#include "sax_parser.h"
+#include "handler.h"
 #include <ostream>
-#include <stack>
+#include <vector>
 #include <string>
 #include <memory>
-#include <vector>
-#include <expat.h>
-#include "handler.h"
 
-class xml_valuator
+class xml_valuator_t : public sax_parser_t
 {
 public:
-	xml_valuator(std::ostream& os);
-	~xml_valuator();
-
-	void calculate(const std::string& fname);
+	xml_valuator_t(std::ostream& os);
 
 private:
-	static void start(void* userData, const char* name, const char* args[]);
-	static void value(void* userData, const char* val, int len);
-	static void end(void *userData, const char *name);
+	void open_tag(const std::string& name);
+	void value(const std::string& value);
+	void close_tag(const std::string& name);
 
-	XML_Parser parser;
-	std::stack<std::string> nodes;
 	std::vector<std::unique_ptr<handler_t>> handlers;
 	std::ostream& os;
 };

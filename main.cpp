@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "xml_valuator.h"
 
 int main(int argc, char *argv[])
@@ -9,8 +10,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	const std::string fname = argv[1];
-	xml_valuator valuator(std::cout);
-	valuator.calculate(fname);
+	xml_valuator_t valuator(std::cout);
+	valuator.parse(std::ifstream(fname));
 
 	return 0;
 }
