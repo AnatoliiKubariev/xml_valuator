@@ -10,23 +10,39 @@ class handler_t
 public:
 	virtual ~handler_t() = 0 {};
 
-	virtual void start(const std::string& name, const std::string& parent_node){};
+    enum status_t{ incomplete, complete };
+    enum role_t{ child, root };
+
+    double get_result();
+
+    virtual void open_tag(const std::string& name, const std::string& parent_node){};
 	virtual void value(const std::string& parent_node, const double value){};
-	virtual void end(const std::string& name, std::ostream& os){};
+    virtual status_t close_tag(const std::string& name, std::ostream& os){ return incomplete; };
 protected:
 	double result;
-	bool value_flag;
-	bool end_flag;
+    role_t role;
 };
 
 class addition_handler_t : public handler_t
 {
 public:
-	addition_handler_t();
+    addition_handler_t(role_t role);
 private:
-	void start(const std::string& name, const std::string& parent_node);
+	void open_tag(const std::string& name, const std::string& parent_node);
 	void value(const std::string& parent_node, const double value);
-	void end(const std::string& name, std::ostream& os);
+    status_t close_tag(const std::string& name, std::ostream& os);
 
-	std::vector<std::unique_ptr<handler_t>> handlers;
+	std::unique_ptr<handler_t> nested_handler;
+};
+
+class multiplication_handler_t : public handler_t
+{
+public:
+    multiplication_handler_t(role_t role);
+private:
+    void open_tag(const std::string& name, const std::string& parent_node);
+    void value(const std::string& parent_node, const double value);
+    status_t close_tag(const std::string& name, std::ostream& os);
+
+    std::unique_ptr<handler_t> nested_handler;
 };

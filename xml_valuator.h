@@ -17,6 +17,6 @@ private:
 	void value(const std::string& value);
 	void close_tag(const std::string& name);
 
-	std::vector<std::unique_ptr<handler_t>> handlers;
+	std::unique_ptr<handler_t> handler;
 	std::ostream& os;
 };

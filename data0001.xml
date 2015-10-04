@@ -2,11 +2,21 @@
 	<addition id="1">
 		<item>1</item>
 		<item>
-			<addition>
-				<item>2</item>
-				<item>3</item>
-			</addition>
+			<multiplication>
+				<factor>2</factor>
+				<factor>3</factor>
+			</multiplication>
 		</item>
 		<item>4</item>
 	</addition>
+	<multiplication id="3">
+		<factor>5</factor>
+		<factor>
+			<multiplication>
+				<factor>2</factor>
+				<factor>3</factor>
+			</multiplication>
+		</factor>
+		<factor>2</factor>
+	</multiplication>
 </expressions>

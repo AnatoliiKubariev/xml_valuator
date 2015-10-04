@@ -1,55 +1,114 @@
 #include "handler.h"
 
-addition_handler_t::addition_handler_t()
+double handler_t::get_result()
 {
-	result = 0;
-	value_flag = true;
-	end_flag = true;
+    return result;
 }
 
-void addition_handler_t::start(const std::string& name, const std::string& parent_node)
+//addition
+addition_handler_t::addition_handler_t(handler_t::role_t role)
 {
-	if (name == "addition" && parent_node == "item")
-	{
-		std::unique_ptr<handler_t> addition(new addition_handler_t());
-		handlers.push_back(std::move(addition));
-		return;
-	}
+    this->role = role;
+    result = 0;
+}
 
-	for (auto& h : handlers)
-	{
-		h->start(name, parent_node);
-	}
+void addition_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+{
+    if (name == "addition" && parent_node == "item")
+    {
+        nested_handler.reset(new addition_handler_t(child));
+        return;
+    }
+    if (name == "multiplication" && parent_node == "item")
+    {
+        nested_handler.reset(new multiplication_handler_t(child));
+        return;
+    }
+    if (nested_handler)
+        nested_handler->open_tag(name, parent_node);
 }
 void addition_handler_t::value(const std::string& parent_node, const double value)
 {
-	for (auto& h : handlers)
-	{
-		h->value(parent_node, value);
-		value_flag == false;
-	}
-
-	if (parent_node == "item" && value_flag == true)
-	{
-		result += value;
-	}
-	value_flag == true;
+    if (nested_handler)
+        nested_handler->value(parent_node, value);
+    else
+    if (parent_node == "item")
+        result += value;
 }
-void addition_handler_t::end(const std::string& name, std::ostream& os)
+handler_t::status_t addition_handler_t::close_tag(const std::string& name, std::ostream& os)
 {
-	for (auto& h : handlers)
-	{
-		h->end(name, os);
-		end_flag = false;
-	}
+    status_t nested_end_status = incomplete;
+    if (nested_handler)
+    {
+        nested_end_status = nested_handler->close_tag(name, os);
+    }
 
-	if (name != "addition" || end_flag == false)
-	{
-		end_flag = true;
-		return;
-	}
+    if (nested_end_status == complete)
+    {
+        result += nested_handler->get_result();
+        nested_handler.reset();
+        return incomplete;
+    }
 
-	value_flag = false;
-	end_flag = false;
-	os << name << ": " << result << std::endl;
+    if (name != "addition")
+        return incomplete;
+
+    if (!nested_handler && role == root)
+        os << name << ": " << result << std::endl;
+
+    return complete;
+}
+
+//multiplication
+multiplication_handler_t::multiplication_handler_t(handler_t::role_t role)
+{
+    this->role = role;
+    result = 1;
+}
+
+void multiplication_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+{
+    if (name == "addition" && parent_node == "factor")
+    {
+        nested_handler.reset(new addition_handler_t(child));
+        return;
+    }
+    if (name == "multiplication" && parent_node == "factor")
+    {
+        nested_handler.reset(new multiplication_handler_t(child));
+        return;
+    }
+    if (nested_handler)
+        nested_handler->open_tag(name, parent_node);
+}
+void multiplication_handler_t::value(const std::string& parent_node, const double value)
+{
+    if (nested_handler)
+        nested_handler->value(parent_node, value);
+    else
+    if (parent_node == "factor")
+        result *= value;
+}
+handler_t::status_t multiplication_handler_t::close_tag(const std::string& name, std::ostream& os)
+{
+    status_t nested_end_status = incomplete;
+    if (nested_handler)
+    {
+        nested_end_status = nested_handler->close_tag(name, os);
+    }
+
+    if (nested_end_status == complete)
+    {
+        result *= nested_handler->get_result();
+        nested_handler.reset();
+        return incomplete;
+    }
+
+    if (name != "multiplication")
+        return incomplete;
+
+    if (!nested_handler && role == root)
+        os << name << ": " << result << std::endl;
+
+    return complete;
 }
