@@ -12,9 +12,11 @@ void xml_valuator_t::open_tag(const std::string& name)
 {
     if (!handler && name == "addition")
         handler.reset(new addition_handler_t(handler_t::root));
-
     if (!handler && name == "multiplication")
         handler.reset(new multiplication_handler_t(handler_t::root));
+    if (!handler && name == "subtraction")
+        handler.reset(new subtraction_handler_t(handler_t::root));
+
 
     if (handler)
         handler->open_tag(name, nodes.empty() ? "" : nodes.top());

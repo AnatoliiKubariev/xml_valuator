@@ -29,7 +29,7 @@ public:
     addition_handler_t(role_t role);
 private:
 	void open_tag(const std::string& name, const std::string& parent_node);
-	void value(const std::string& parent_node, const double value);
+	void value(const std::string& name, const double value);
     status_t close_tag(const std::string& name, std::ostream& os);
 
 	std::unique_ptr<handler_t> nested_handler;
@@ -41,8 +41,22 @@ public:
     multiplication_handler_t(role_t role);
 private:
     void open_tag(const std::string& name, const std::string& parent_node);
-    void value(const std::string& parent_node, const double value);
+    void value(const std::string& name, const double value);
     status_t close_tag(const std::string& name, std::ostream& os);
 
     std::unique_ptr<handler_t> nested_handler;
+};
+
+class subtraction_handler_t : public handler_t
+{
+public:
+    subtraction_handler_t(role_t role);
+private:
+    void open_tag(const std::string& name, const std::string& parent_node);
+    void value(const std::string& name, const double value);
+    status_t close_tag(const std::string& name, std::ostream& os);
+
+    std::unique_ptr<handler_t> nested_handler;
+    double minuend;
+    double subtrahend;
 };

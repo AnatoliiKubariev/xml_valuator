@@ -1,4 +1,13 @@
 <expressions>
+	<subtraction id="2">
+		<minuend>
+			<multiplication>
+				<factor>3</factor>
+				<factor>2</factor>
+			</multiplication>
+		</minuend>
+		<subtrahend>4</subtrahend>
+	</subtraction>
 	<addition id="1">
 		<item>1</item>
 		<item>
