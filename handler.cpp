@@ -5,6 +5,7 @@ double handler_t::get_result()
     return result;
 }
 
+std::unique_ptr<handler_t> create_nested_handler(const std::string& name);
 //-----addition-----
 addition_handler_t::addition_handler_t(handler_t::role_t role)
 {
@@ -14,14 +15,9 @@ addition_handler_t::addition_handler_t(handler_t::role_t role)
 
 void addition_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
-    if (name == "addition" && parent_node == "item")
+    if (!nested_handler)
     {
-        nested_handler.reset(new addition_handler_t(child));
-        return;
-    }
-    if (name == "multiplication" && parent_node == "item")
-    {
-        nested_handler.reset(new multiplication_handler_t(child));
+        nested_handler = create_nested_handler(name);
         return;
     }
     if (nested_handler)
@@ -68,14 +64,9 @@ multiplication_handler_t::multiplication_handler_t(handler_t::role_t role)
 
 void multiplication_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
-    if (name == "addition" && parent_node == "factor")
+    if (!nested_handler)
     {
-        nested_handler.reset(new addition_handler_t(child));
-        return;
-    }
-    if (name == "multiplication" && parent_node == "factor")
-    {
-        nested_handler.reset(new multiplication_handler_t(child));
+        nested_handler = create_nested_handler(name);
         return;
     }
     if (nested_handler)
@@ -122,27 +113,11 @@ subtraction_handler_t::subtraction_handler_t(handler_t::role_t role) : minuend(0
 
 void subtraction_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
-    if (name == "addition" && parent_node == "minuend")
+    if (!nested_handler)
     {
-        nested_handler.reset(new addition_handler_t(child));
+        nested_handler = create_nested_handler(name);
         return;
     }
-    if (name == "multiplication" && parent_node == "minuend")
-    {
-        nested_handler.reset(new multiplication_handler_t(child));
-        return;
-    }
-    if (name == "addition" && parent_node == "subtrahend")
-    {
-        nested_handler.reset(new addition_handler_t(child));
-        return;
-    }
-    if (name == "multiplication" && parent_node == "minuend")
-    {
-        nested_handler.reset(new multiplication_handler_t(child));
-        return;
-    }
-
 
     if (nested_handler)
         nested_handler->open_tag(name, parent_node);
@@ -205,28 +180,11 @@ division_handler_t::division_handler_t(handler_t::role_t role) : dividend(0), di
 
 void division_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
-    if (name == "addition" && parent_node == "dividend")
+    if (!nested_handler)
     {
-        nested_handler.reset(new addition_handler_t(child));
+        nested_handler = create_nested_handler(name);
         return;
     }
-    if (name == "multiplication" && parent_node == "divisor")
-    {
-        nested_handler.reset(new multiplication_handler_t(child));
-        return;
-    }
-    if (name == "addition" && parent_node == "dividend")
-    {
-        nested_handler.reset(new addition_handler_t(child));
-        return;
-    }
-    if (name == "multiplication" && parent_node == "divisor")
-    {
-        nested_handler.reset(new multiplication_handler_t(child));
-        return;
-    }
-
-
     if (nested_handler)
         nested_handler->open_tag(name, parent_node);
 }
@@ -277,4 +235,31 @@ handler_t::status_t division_handler_t::close_tag(const std::string& name, std::
     }
 
     return complete;
+}
+
+std::unique_ptr<handler_t> create_nested_handler(const std::string& name)
+{
+    if (name == "addition")
+    {
+        return std::unique_ptr<handler_t>(new addition_handler_t(handler_t::child));
+    }
+    else
+    if (name == "subtraction")
+    {
+        return std::unique_ptr<handler_t>(new subtraction_handler_t(handler_t::child));
+    }
+    else
+    if (name == "multiplication")
+    {
+        return std::unique_ptr<handler_t>(new multiplication_handler_t(handler_t::child));
+    }
+    else
+    if (name == "division")
+    {
+        return std::unique_ptr<handler_t>(new division_handler_t(handler_t::child));
+    }
+    else
+    {
+        return std::unique_ptr<handler_t>(nullptr);
+    }
 }

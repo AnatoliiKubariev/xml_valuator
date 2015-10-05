@@ -11,13 +11,25 @@ xml_valuator_t::xml_valuator_t(std::ostream& os) : os(os) {}
 void xml_valuator_t::open_tag(const std::string& name)
 {
     if (!handler && name == "addition")
+    {
         handler.reset(new addition_handler_t(handler_t::root));
+        return;
+    }
     if (!handler && name == "multiplication")
+    {
         handler.reset(new multiplication_handler_t(handler_t::root));
+        return;
+    }
     if (!handler && name == "subtraction")
+    {
         handler.reset(new subtraction_handler_t(handler_t::root));
+        return;
+    }
     if (!handler && name == "division")
+    {
         handler.reset(new division_handler_t(handler_t::root));
+        return;
+    }
 
 
     if (handler)
