@@ -16,6 +16,8 @@ void xml_valuator_t::open_tag(const std::string& name)
         handler.reset(new multiplication_handler_t(handler_t::root));
     if (!handler && name == "subtraction")
         handler.reset(new subtraction_handler_t(handler_t::root));
+    if (!handler && name == "division")
+        handler.reset(new division_handler_t(handler_t::root));
 
 
     if (handler)

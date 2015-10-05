@@ -1,4 +1,14 @@
 <expressions>
+	<division id="4">
+		<dividend>
+			<addition id="1">
+				<item>1</item>
+				<item>2</item>
+				<item>3</item>
+			</addition>
+		</dividend>
+		<divisor>2</divisor> 
+	</division>
 	<subtraction id="2">
 		<minuend>
 			<multiplication>

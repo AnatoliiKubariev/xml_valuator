@@ -195,3 +195,86 @@ handler_t::status_t subtraction_handler_t::close_tag(const std::string& name, st
 
     return complete;
 }
+
+//-----division-----
+division_handler_t::division_handler_t(handler_t::role_t role) : dividend(0), divisor(0)
+{
+    this->role = role;
+    result = 0;
+}
+
+void division_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+{
+    if (name == "addition" && parent_node == "dividend")
+    {
+        nested_handler.reset(new addition_handler_t(child));
+        return;
+    }
+    if (name == "multiplication" && parent_node == "divisor")
+    {
+        nested_handler.reset(new multiplication_handler_t(child));
+        return;
+    }
+    if (name == "addition" && parent_node == "dividend")
+    {
+        nested_handler.reset(new addition_handler_t(child));
+        return;
+    }
+    if (name == "multiplication" && parent_node == "divisor")
+    {
+        nested_handler.reset(new multiplication_handler_t(child));
+        return;
+    }
+
+
+    if (nested_handler)
+        nested_handler->open_tag(name, parent_node);
+}
+void division_handler_t::value(const std::string& name, const double value)
+{
+    if (nested_handler)
+        nested_handler->value(name, value);
+    else
+    if (name == "dividend")
+        dividend = value;
+    else
+    if (name == "divisor")
+        divisor = value;
+}
+handler_t::status_t division_handler_t::close_tag(const std::string& name, std::ostream& os)
+{
+    status_t nested_end_status = incomplete;
+    if (nested_handler)
+    {
+        nested_end_status = nested_handler->close_tag(name, os);
+    }
+
+    if (nested_end_status == complete)
+    {
+        result = nested_handler->get_result();
+
+        nested_handler.reset();
+        return incomplete;
+    }
+
+    if (name == "dividend" && result)
+    {
+        dividend = result;
+        result = 0;
+    }
+    if (name == "divisor" && result)
+    {
+        divisor = result;
+        result = 0;
+    }
+    if (name != "division")
+        return incomplete;
+
+    if (!nested_handler && role == root)
+    {
+        result = dividend / divisor;
+        os << name << ": " << result << std::endl;
+    }
+
+    return complete;
+}

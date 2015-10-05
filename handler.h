@@ -60,3 +60,17 @@ private:
     double minuend;
     double subtrahend;
 };
+
+class division_handler_t : public handler_t
+{
+public:
+    division_handler_t(role_t role);
+private:
+    void open_tag(const std::string& name, const std::string& parent_node);
+    void value(const std::string& name, const double value);
+    status_t close_tag(const std::string& name, std::ostream& os);
+
+    std::unique_ptr<handler_t> nested_handler;
+    double dividend;
+    double divisor;
+};
