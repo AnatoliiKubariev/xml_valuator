@@ -37,7 +37,7 @@ void sax_parser_t::parse(std::istream& is)
 void sax_parser_t::start(void* userData, const char* name, const char* args[])
 {
 	sax_parser_t* sax_parser = reinterpret_cast<sax_parser_t*>(userData);
-	sax_parser->open_tag(std::string(name));
+    sax_parser->open_tag(std::string(name));
 	sax_parser->nodes.push(name);
 }
 void sax_parser_t::value(void* userData, const char* val, int len)

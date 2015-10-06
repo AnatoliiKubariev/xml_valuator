@@ -8,10 +8,11 @@
 class handler_t
 {
 public:
-	virtual ~handler_t() = 0 {};
-
     enum status_t{ incomplete, complete };
     enum role_t{ child, root };
+
+    handler_t(role_t role, double result);
+	virtual ~handler_t() = 0 {};
 
     double get_result();
 

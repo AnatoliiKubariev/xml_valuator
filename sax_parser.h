@@ -13,7 +13,7 @@ public:
 protected:
 	std::stack<std::string> nodes;
 private:
-	virtual void open_tag(const std::string& name){};
+    virtual void open_tag(const std::string& name){};
 	virtual void value(const std::string& value){};
 	virtual void close_tag(const std::string& name){};
 

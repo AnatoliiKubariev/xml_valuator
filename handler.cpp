@@ -1,5 +1,9 @@
 #include "handler.h"
 
+handler_t::handler_t(role_t role, const double result)
+: role(role)
+, result(result){}
+
 double handler_t::get_result()
 {
     return result;
@@ -8,10 +12,7 @@ double handler_t::get_result()
 std::unique_ptr<handler_t> create_nested_handler(const std::string& name);
 //-----addition-----
 addition_handler_t::addition_handler_t(handler_t::role_t role)
-{
-    this->role = role;
-    result = 0;
-}
+: handler_t(role, 0){}
 
 void addition_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
@@ -26,8 +27,10 @@ void addition_handler_t::open_tag(const std::string& name, const std::string& pa
 void addition_handler_t::value(const std::string& name, const double value)
 {
     if (nested_handler)
+    {
         nested_handler->value(name, value);
-    else
+        return;
+    }
     if (name == "item")
         result += value;
 }
@@ -57,10 +60,7 @@ handler_t::status_t addition_handler_t::close_tag(const std::string& name, std::
 
 //-----multiplication-----
 multiplication_handler_t::multiplication_handler_t(handler_t::role_t role)
-{
-    this->role = role;
-    result = 1;
-}
+: handler_t(role, 1){}
 
 void multiplication_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
@@ -75,8 +75,10 @@ void multiplication_handler_t::open_tag(const std::string& name, const std::stri
 void multiplication_handler_t::value(const std::string& name, const double value)
 {
     if (nested_handler)
+    {
         nested_handler->value(name, value);
-    else
+        return;
+    }
     if (name == "factor")
         result *= value;
 }
@@ -105,11 +107,10 @@ handler_t::status_t multiplication_handler_t::close_tag(const std::string& name,
 }
 
 //------subtraction------
-subtraction_handler_t::subtraction_handler_t(handler_t::role_t role) : minuend(0), subtrahend(0)
-{
-    this->role = role;
-    result = 0;
-}
+subtraction_handler_t::subtraction_handler_t(handler_t::role_t role)
+: handler_t(role, 1)
+, minuend(0)
+, subtrahend(0){}
 
 void subtraction_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
@@ -118,15 +119,16 @@ void subtraction_handler_t::open_tag(const std::string& name, const std::string&
         nested_handler = create_nested_handler(name);
         return;
     }
-
     if (nested_handler)
         nested_handler->open_tag(name, parent_node);
 }
 void subtraction_handler_t::value(const std::string& name, const double value)
 {
     if (nested_handler)
+    {
         nested_handler->value(name, value);
-    else
+        return;
+    }
     if (name == "subtrahend")
         subtrahend = value;
     else
@@ -172,11 +174,10 @@ handler_t::status_t subtraction_handler_t::close_tag(const std::string& name, st
 }
 
 //-----division-----
-division_handler_t::division_handler_t(handler_t::role_t role) : dividend(0), divisor(0)
-{
-    this->role = role;
-    result = 0;
-}
+division_handler_t::division_handler_t(handler_t::role_t role)
+: handler_t(role, 0)
+, dividend(0)
+, divisor(0) {}
 
 void division_handler_t::open_tag(const std::string& name, const std::string& parent_node)
 {
@@ -191,8 +192,10 @@ void division_handler_t::open_tag(const std::string& name, const std::string& pa
 void division_handler_t::value(const std::string& name, const double value)
 {
     if (nested_handler)
+    {
         nested_handler->value(name, value);
-    else
+        return;
+    }
     if (name == "dividend")
         dividend = value;
     else
