@@ -1,39 +1,20 @@
 #include "xml_valuator.h"
 #include <sstream>
-#include <iostream>
 #include <string>
 #include <fstream>
 #include <vector>
-#include <stdexcept>
 
 xml_valuator_t::xml_valuator_t(std::ostream& os) : os(os) {}
 
 void xml_valuator_t::open_tag(const std::string& name)
 {
-    if (!handler && name == "addition")
+    if (!handler)
     {
-        handler.reset(new addition_handler_t(handler_t::root));
+        handler = create_handler(name);
         return;
     }
-    if (!handler && name == "multiplication")
-    {
-        handler.reset(new multiplication_handler_t(handler_t::root));
-        return;
-    }
-    if (!handler && name == "subtraction")
-    {
-        handler.reset(new subtraction_handler_t(handler_t::root));
-        return;
-    }
-    if (!handler && name == "division")
-    {
-        handler.reset(new division_handler_t(handler_t::root));
-        return;
-    }
-
-
     if (handler)
-        handler->open_tag(name, nodes.empty() ? "" : nodes.top());
+        handler->open_tag(name);
 }
 void xml_valuator_t::value(const std::string& value)
 {
@@ -49,6 +30,9 @@ void xml_valuator_t::value(const std::string& value)
 void xml_valuator_t::close_tag(const std::string& name)
 {
 
-    if (handler && handler->close_tag(name, os) == handler_t::complete)
+    if (handler && handler->close_tag(name) == handler_t::complete)
+    {
+        os << name << ": " << handler->get_result() << std::endl;
         handler.reset();
+    }
 }

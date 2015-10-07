@@ -3,7 +3,6 @@
 #include "sax_parser.h"
 #include "handler.h"
 #include <ostream>
-#include <vector>
 #include <string>
 #include <memory>
 

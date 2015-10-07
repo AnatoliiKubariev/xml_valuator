@@ -1,48 +1,63 @@
 #include "handler.h"
 
-handler_t::handler_t(role_t role, const double result)
-: role(role)
-, result(result){}
+//-----handler-----
+handler_t::handler_t(const double result)
+: result(result){}
 
 double handler_t::get_result()
 {
     return result;
 }
 
-std::unique_ptr<handler_t> create_nested_handler(const std::string& name);
-//-----addition-----
-addition_handler_t::addition_handler_t(handler_t::role_t role)
-: handler_t(role, 0){}
-
-void addition_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+void handler_t::open_tag(const std::string& name)
 {
     if (!nested_handler)
     {
-        nested_handler = create_nested_handler(name);
+        nested_handler = create_handler(name);
         return;
     }
+    else
     if (nested_handler)
-        nested_handler->open_tag(name, parent_node);
+        nested_handler->open_tag(name);
 }
-void addition_handler_t::value(const std::string& name, const double value)
+bool handler_t::value(const std::string& name, const double value)
 {
     if (nested_handler)
     {
         nested_handler->value(name, value);
-        return;
+        return true;
     }
-    if (name == "item")
-        result += value;
+    return false;
 }
-handler_t::status_t addition_handler_t::close_tag(const std::string& name, std::ostream& os)
+handler_t::status_t handler_t::close_tag(const std::string& name)
 {
-    status_t nested_end_status = incomplete;
     if (nested_handler)
     {
-        nested_end_status = nested_handler->close_tag(name, os);
+        return nested_handler->close_tag(name);
     }
+    else
+        return incomplete;
+}
 
-    if (nested_end_status == complete)
+//-----addition-----
+addition_handler_t::addition_handler_t()
+: handler_t(0){}
+
+bool addition_handler_t::value(const std::string& name, const double value)
+{
+    if (handler_t::value(name, value))
+        return true;
+
+    if (name == "item")
+    {
+        result += value;
+        return true;
+    }
+    return false;
+}
+handler_t::status_t addition_handler_t::close_tag(const std::string& name)
+{
+    if (handler_t::close_tag(name) == complete)
     {
         result += nested_handler->get_result();
         nested_handler.reset();
@@ -52,98 +67,66 @@ handler_t::status_t addition_handler_t::close_tag(const std::string& name, std::
     if (name != "addition")
         return incomplete;
 
-    if (!nested_handler && role == root)
-        os << name << ": " << result << std::endl;
-
     return complete;
 }
 
 //-----multiplication-----
-multiplication_handler_t::multiplication_handler_t(handler_t::role_t role)
-: handler_t(role, 1){}
+multiplication_handler_t::multiplication_handler_t()
+: handler_t(1){}
 
-void multiplication_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+bool multiplication_handler_t::value(const std::string& name, const double value)
 {
-    if (!nested_handler)
-    {
-        nested_handler = create_nested_handler(name);
-        return;
-    }
-    if (nested_handler)
-        nested_handler->open_tag(name, parent_node);
-}
-void multiplication_handler_t::value(const std::string& name, const double value)
-{
-    if (nested_handler)
-    {
-        nested_handler->value(name, value);
-        return;
-    }
+    if (handler_t::value(name, value))
+        return true;
+
     if (name == "factor")
-        result *= value;
-}
-handler_t::status_t multiplication_handler_t::close_tag(const std::string& name, std::ostream& os)
-{
-    status_t nested_end_status = incomplete;
-    if (nested_handler)
     {
-        nested_end_status = nested_handler->close_tag(name, os);
+        result *= value;
+        return true;
     }
-
-    if (nested_end_status == complete)
+    return false;
+}
+handler_t::status_t multiplication_handler_t::close_tag(const std::string& name)
+{
+    if (handler_t::close_tag(name) == complete)
     {
         result *= nested_handler->get_result();
         nested_handler.reset();
         return incomplete;
     }
-
     if (name != "multiplication")
         return incomplete;
-
-    if (!nested_handler && role == root)
-        os << name << ": " << result << std::endl;
 
     return complete;
 }
 
 //------subtraction------
-subtraction_handler_t::subtraction_handler_t(handler_t::role_t role)
-: handler_t(role, 1)
+subtraction_handler_t::subtraction_handler_t()
+: handler_t(1)
 , minuend(0)
 , subtrahend(0){}
 
-void subtraction_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+bool subtraction_handler_t::value(const std::string& name, const double value)
 {
-    if (!nested_handler)
-    {
-        nested_handler = create_nested_handler(name);
-        return;
-    }
-    if (nested_handler)
-        nested_handler->open_tag(name, parent_node);
-}
-void subtraction_handler_t::value(const std::string& name, const double value)
-{
-    if (nested_handler)
-    {
-        nested_handler->value(name, value);
-        return;
-    }
-    if (name == "subtrahend")
-        subtrahend = value;
-    else
-    if (name == "minuend")
-        minuend = value;
-}
-handler_t::status_t subtraction_handler_t::close_tag(const std::string& name, std::ostream& os)
-{
-    status_t nested_end_status = incomplete;
-    if (nested_handler)
-    {
-        nested_end_status = nested_handler->close_tag(name, os);
-    }
+    if (handler_t::value(name, value))
+        return true;
 
-    if (nested_end_status == complete)
+    if (!nested_handler)
+    if (name == "subtrahend")
+    {
+        subtrahend = value;
+        return true;
+    }
+    if (name == "minuend")
+    {
+        minuend = value;
+        return true;
+    }
+    return false;
+}
+handler_t::status_t subtraction_handler_t::close_tag(const std::string& name)
+{
+    if (handler_t::close_tag(name) == complete)
     {
         result = nested_handler->get_result();
 
@@ -164,53 +147,40 @@ handler_t::status_t subtraction_handler_t::close_tag(const std::string& name, st
     if (name != "subtraction")
         return incomplete;
 
-    if (!nested_handler && role == root)
+    if (!nested_handler)
     {
         result = minuend - subtrahend;
-        os << name << ": " << result << std::endl;
     }
 
     return complete;
 }
 
 //-----division-----
-division_handler_t::division_handler_t(handler_t::role_t role)
-: handler_t(role, 0)
+division_handler_t::division_handler_t()
+: handler_t(0)
 , dividend(0)
 , divisor(0) {}
 
-void division_handler_t::open_tag(const std::string& name, const std::string& parent_node)
+bool division_handler_t::value(const std::string& name, const double value)
 {
-    if (!nested_handler)
-    {
-        nested_handler = create_nested_handler(name);
-        return;
-    }
-    if (nested_handler)
-        nested_handler->open_tag(name, parent_node);
-}
-void division_handler_t::value(const std::string& name, const double value)
-{
-    if (nested_handler)
-    {
-        nested_handler->value(name, value);
-        return;
-    }
-    if (name == "dividend")
-        dividend = value;
-    else
-    if (name == "divisor")
-        divisor = value;
-}
-handler_t::status_t division_handler_t::close_tag(const std::string& name, std::ostream& os)
-{
-    status_t nested_end_status = incomplete;
-    if (nested_handler)
-    {
-        nested_end_status = nested_handler->close_tag(name, os);
-    }
+    if (handler_t::value(name, value))
+        return true;
 
-    if (nested_end_status == complete)
+    if (name == "dividend")
+    {
+        dividend = value;
+        return true;
+    }
+    if (name == "divisor")
+    {
+        divisor = value;
+        return true;
+    }
+    return false;
+}
+handler_t::status_t division_handler_t::close_tag(const std::string& name)
+{
+    if (handler_t::close_tag(name) == complete)
     {
         result = nested_handler->get_result();
 
@@ -231,38 +201,29 @@ handler_t::status_t division_handler_t::close_tag(const std::string& name, std::
     if (name != "division")
         return incomplete;
 
-    if (!nested_handler && role == root)
-    {
+    if (!nested_handler)
         result = dividend / divisor;
-        os << name << ": " << result << std::endl;
-    }
 
     return complete;
 }
 
-std::unique_ptr<handler_t> create_nested_handler(const std::string& name)
+std::unique_ptr<handler_t> create_handler(const std::string& name)
 {
     if (name == "addition")
     {
-        return std::unique_ptr<handler_t>(new addition_handler_t(handler_t::child));
+        return std::make_unique<addition_handler_t>();
     }
-    else
     if (name == "subtraction")
     {
-        return std::unique_ptr<handler_t>(new subtraction_handler_t(handler_t::child));
+        return std::make_unique<subtraction_handler_t>();
     }
-    else
     if (name == "multiplication")
     {
-        return std::unique_ptr<handler_t>(new multiplication_handler_t(handler_t::child));
+        return std::make_unique<multiplication_handler_t>();
     }
-    else
     if (name == "division")
     {
-        return std::unique_ptr<handler_t>(new division_handler_t(handler_t::child));
+        return std::make_unique<division_handler_t>();
     }
-    else
-    {
-        return std::unique_ptr<handler_t>(nullptr);
-    }
+    return std::unique_ptr<handler_t>(nullptr);
 }

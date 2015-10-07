@@ -33,9 +33,14 @@
 		<factor>
 			<multiplication>
 				<factor>2</factor>
-				<factor>3</factor>
+				<factor>
+					<division>
+						<dividend>8</dividend>
+						<divisor>4</divisor>
+					</division>
+				</factor>
 			</multiplication>
 		</factor>
-		<factor>2</factor>
+		<factor>3</factor>
 	</multiplication>
 </expressions>
