@@ -2,6 +2,9 @@
 #include <vector>
 #include <istream>
 
+#include <string>
+#include <iostream>
+
 sax_parser_t::sax_parser_t()
 {
     parser = XML_ParserCreate(nullptr);

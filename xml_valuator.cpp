@@ -8,6 +8,11 @@ xml_valuator_t::xml_valuator_t(std::ostream& os) : os(os) {}
 
 void xml_valuator_t::open_tag(const std::string& name)
 {
+    if (name == "expressions")
+    {
+        os << "<" << name << ">" << std::endl;
+    }
+
     if (!handler)
     {
         handler = create_handler(name);
@@ -29,10 +34,16 @@ void xml_valuator_t::value(const std::string& value)
 }
 void xml_valuator_t::close_tag(const std::string& name)
 {
+    if (name == "expressions")
+    {
+        os << "</" << name << ">";
+    }
 
     if (handler && handler->close_tag(name) == handler_t::complete)
     {
-        os << name << ": " << handler->get_result() << std::endl;
+        os << "<" << name << ">";
+        os << handler->get_result();
+        os << "</" << name << ">" << std::endl;
         handler.reset();
     }
 }

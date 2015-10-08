@@ -180,7 +180,9 @@ bool division_handler_t::value(const std::string& name, const double value)
 }
 handler_t::status_t division_handler_t::close_tag(const std::string& name)
 {
-    if (handler_t::close_tag(name) == complete)
+    status_t nested_end_status = handler_t::close_tag(name);
+
+    if (nested_end_status == complete)
     {
         result = nested_handler->get_result();
 
